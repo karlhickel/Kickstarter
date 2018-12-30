@@ -1,0 +1,138 @@
+
+
+##Columns Explaination
+1) ID = internal kickstarter id
+2) name = name of project - A project is a finite work with a clear goal that you’d like to bring to life. Think albums, books, or films.
+3) category = category
+4) main_category = category of campaign
+5) currency = currency used to support
+6) deadline = deadline for crowdfunding
+7) goal = fundraising goal - The funding goal is the amount of money that a creator needs to complete their project.
+8) launched = launched date launched
+9) pledged = amount pledged by "crowd"
+10) state = Current condition the project is in
+11) backers = number of backers
+12) country = country pledged from
+13) usd pledged = amount of money pledged
+
+```{r}
+#reads in data into KickStar
+KickStar <- read.csv("/Users/karlhickel/Desktop/ks-projects-201612.csv")
+#removing a few columns with null values
+KickStar <- subset(KickStar, select = -c(14,15,16,17))
+colSums(is.na(KickStar))
+KickStar<- KickStar[!is.na(KickStar$name),]
+colSums(is.na(KickStar))
+#cleaning up category column
+KickStar$category <- factor(KickStar$category, levels = c("Zines","Young Adult", "World Music", "Workshops" ,"Woodworking", "Webseries", "Webcomics", "Web","Weaving", "Wearables", "Video Games", "Video Art", "Video", "Vegan", "Typography", "Translations", "Thrillers", "Theater", "Textiles", "Television", "Technology", "Taxidermy", "Tabletop Games", "Stationery", "Spaces", "Space Exploration", "Sound", "Software", "Small Batch", "Shorts", "Sculpture", "Science Fiction", "Romance", "Rock", "Robots", "Restaurants", "Residencies", "Ready-to-wear", "Radio & Podcasts", "R&B", "Quilts", "Puzzles", "Punk", "Publishing", "Public Art", "Product Design", "Printing", "Print", "Pottery", "Pop", "Poetry", "Plays", "Playing Cards", "Places", "Photography", "Photobooks", "Photo", "Pet Fashion", "Periodicals", "Performances", "Performance Art", "People", "Painting", "Nonfiction", "Nature", "Narrative Film", "Musical", "Music Videos", "Music", "Movie Theaters", "Mobile Games", "Mixed Media", "Metal", "Makerspaces", "Live Games", "Literary Journals", "Letterpress", "Latin", "Knitting", "Kids", "Journalism", "Jewelry", "Jazz", "Interactive Design", "Installations", "Indie Rock", "Immersive", "Illustration", "Horror", "Hip-Hop", "Hardware", "Graphic Novels", "Graphic Design", "Glass", "Gaming Hardware", "Games", "Gadgets", "Footwear", "Food Trucks", "Food", "Flight", "Fine Art", "Film & Video", "Fiction", "Festivals", "Fashion", "Farms", "Farmer's Markets", "Fantasy", "Family", "Faith", "Fabrication Tools", "Experimental", "Events", "Embroidery", "Electronic Music", "Drinks", "Drama", "Documentary", "DIY Electronics", "DIY", "Digital Art", "Design", "Dance", "Crochet", "Crafts", "Couture", "Country & Folk", "Cookbooks", "Conceptual Art", "Community Gardens", "Comics", "Comic Books", "Comedy", "Classical Music", "Civic Design", "Chiptune", "Childrenswear", "Children's Books", "Ceramics", "Candles", "Camera Equipment", "Calendars", "Blues", "Bacon", "Audio", "Art Books", "Art", "Architecture", "Apps", "Apparel", "Anthologies", "Animation", "Animals", "Action", "Accessories", "Academic", "3D Printing"))
+colSums(is.na(KickStar))
+KickStar<- KickStar[!is.na(KickStar$category),]
+colSums(is.na(KickStar))
+#cleaning main_category column
+table(KickStar$main_category)
+KickStar$main_category <- factor(KickStar$main_category, levels = c("Theater", "Technology", "Publishing", "Photography", "Music", "Journalism", "Games", "Food", "Film & Video", "Fashion", "Design", "Dance", "Crafts", "Comics", "Art"))
+colSums(is.na(KickStar))
+#clearning currency column
+table(KickStar$currency)
+KickStar$currency <- factor(KickStar$currency, levels = c("USD", "SGD", "SEK", "NZD", "NOK", "MXN", "HKD", "GBP", "EUR", "DKK", "CHF", "CAD", "AUD"))
+colSums(is.na(KickStar))
+#cleaning goal column
+KickStar$goal <- as.numeric(KickStar$goal)
+colSums(is.na(KickStar))
+#cleaning pledge column
+KickStar$pledged <- as.numeric(KickStar$pledged)
+#cleaning state column
+table(KickStar$state)
+KickStar$state <- factor(KickStar$state, levels = c("failed", "successful", "canceled", "live", "undefined", "suspended"))
+colSums(is.na(KickStar))
+#cleaning backers column
+KickStar$backers <- as.numeric(KickStar$backers)
+colSums(is.na(KickStar))
+#cleaning country column
+table(KickStar$country)
+KickStar$country <- factor(KickStar$country, levels = c("US", "SG", "SE", "NZ", "NO", "NL", "MX", "LU", "IT", "IE", "HK", "GB", "FR", "ES", "DK", "DE", "CH", "CA", "BE", "AU", "AT"))
+colSums(is.na(KickStar))
+KickStar<- KickStar[!is.na(KickStar$country),]
+colSums(is.na(KickStar))
+#cleaning usd.pledged column
+KickStar$usd.pledged <- as.numeric(KickStar$usd.pledged)
+colSums(is.na(KickStar))
+#gets summary of data
+summary(KickStar)
+
+```
+
+
+
+```{r}
+#install.packages("ggplot2")
+library(ggplot2)
+#ggplot of Goal Amount and Pledge Amount by state of company
+ggplot(data = KickStar, aes(goal, pledged)) + geom_smooth() + facet_wrap(~state) + labs(title = "Smooth Plot of Goal vs Pledge Amount by State of Company") + labs(x = "Goal Amount", y = "Pledge Amount")
+#ggplot of Goal Amount and Pledge Aamount by country
+ggplot(data = KickStar, aes(goal, pledged)) + geom_smooth() + facet_wrap(~country) + labs(title = "Smooth Plot of Goal vs Pledge Amount by Country") + labs(x = "Goal Amount", y = "Pledge Amount")
+#ggplot of bar graph with type of currency and the amount pledged 
+ggplot(data = KickStar, aes(x = currency, y = usd.pledged)) + geom_bar(stat = "identity") + labs(x = "Type of Currency", y = "Amount of $ Pledged") + labs(title = "Amount Pledged by Currency")
+##ggplot of bar graph of count of each categories
+ggplot(data = KickStar, aes(category)) + geom_bar() + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + labs(title = "Count of Categories", x = "Categories", y = "Count")
+#ggplot of bar graph of count by state 
+ggplot(data = KickStar, aes(state)) + geom_bar() + labs(title = "Counts per State")
+```
+
+```{r}
+#beginning of Lasso, Ridge, ElasticNet
+#install.packages("useful")
+library(useful)
+myFormula <- as.formula(binomState ~ category + main_category + currency + goal + pledged + backers + country + usd.pledged)
+library(glmnet)
+Xvar <- build.x(myFormula, KickTrain) 
+Yvar <- build.y(myFormula, KickTrain)
+LassoMod <- cv.glmnet(x = Xvar, y = Yvar, alpha = 1, nfolds = 10)
+plot(LassoMod)
+
+
+#Ridge Mod.
+RidgeMod <- cv.glmnet(x = Xvar, y = Yvar, alpha = 0, nfolds = 10)
+plot(RidgeMod)
+
+#Elastic Net
+ElasticNet1 <- cv.glmnet(x = Xvar, y = Yvar, alpha = .25, nfolds = 10)
+ElasticNet2 <- cv.glmnet(x = Xvar, y = Yvar, alpha = .50, nfolds = 10)
+ElasticNet3 <- cv.glmnet(x = Xvar, y = Yvar, alpha = .75, nfolds = 10)
+summary(ElasticNet1)
+
+#MSE
+View(KickStar)
+predictedTrain <- predict(portGradeTrain, data = portData2Train)
+predictedTest <- predict(portGradeTest, data = portData2Test)
+mseTrain <- mean((portData2Train$G3 - predictedTrain)^2)
+mseTest <- mean((portData2Test$G3 - predictedTest)^2)
+mseTrain
+mseTest
+
+
+
+
+```
+
+
+```{r}
+#Logistic Regression
+KickStar$binomState <- ifelse(KickStar$state == "failed",0,1)
+set.seed(1861)
+trainSize <- 0.75
+trainInd <- sample(1:nrow(KickStar), size = floor(nrow(KickStar) * trainSize))
+KickTrain <- KickStar[trainInd, ]
+KickTest <- KickStar[-trainInd, ]
+logitFit <- glm(binomState ~ goal + pledged + backers + usd.pledged + main_category + currency + country, data = KickTrain, family = binomial)
+summary(logitFit)
+exp(logitFit$coefficients)
+plot(logitFit)
+```
+
+
+
+
+
+
+

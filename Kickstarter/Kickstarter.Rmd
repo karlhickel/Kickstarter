@@ -1,0 +1,391 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+#Kickstarter Data
+
+##Columns Explanation
+1) ID = internal kickstarter id
+2) name = name of project - A project is a finite work with a clear goal that you'd like to bring to life. Think albums, books, or films.
+3) category = category
+4) main_category = category of campaign
+5) currency = currency used to support
+6) deadline = deadline for crowdfunding
+7) goal = fundraising goal - The funding goal is the amount of money that a creator needs to complete their project.
+8) launched = launched date launched
+9) pledged = amount pledged by "crowd"
+10) state = Current condition the project is in
+11) backers = number of backers
+12) country = country pledged from
+13) usd pledged = amount of money pledged
+
+##Packages Needed to Download
+```{r}
+#install.packages("ggplot2")
+library(ggplot2)
+library(doBy)
+#install.packages("useful")
+library(useful)
+library(glmnet)
+#install.packages('rpart')
+library(rpart)
+#install.packages("randomForest")
+library("randomForest")
+#install.packages("PlotROC")
+library(plotROC)
+set.seed(1861)
+```
+
+```{r}
+#reads in data into KickStar
+KickStar <- read.csv("/Users/karlhickel/Desktop//ks-projects-201612.csv")
+#KickStar <- read.csv("C:/Users/ericv/Documents/Github/StatisticalModelsProject/ks-projects-201612.csv")
+#KickStar <- read.csv("/Users/Cheddar3/Desktop/MGSC310/Group Projects/kickstarter-projects/ks-projects-201612.csv")
+
+#removing a few columns with null values
+KickStar <- subset(KickStar, select = -c(14,15,16,17))
+#colSums(is.na(KickStar))
+KickStar<- KickStar[!is.na(KickStar$name),]
+#colSums(is.na(KickStar))
+#cleaning up category column
+KickStar$category <- factor(KickStar$category, levels = c("Zines","Young Adult", "World Music", "Workshops" ,"Woodworking", "Webseries", "Webcomics", "Web","Weaving", "Wearables", "Video Games", "Video Art", "Video", "Vegan", "Typography", "Translations", "Thrillers", "Theater", "Textiles", "Television", "Technology", "Taxidermy", "Tabletop Games", "Stationery", "Spaces", "Space Exploration", "Sound", "Software", "Small Batch", "Shorts", "Sculpture", "Science Fiction", "Romance", "Rock", "Robots", "Restaurants", "Residencies", "Ready-to-wear", "Radio & Podcasts", "R&B", "Quilts", "Puzzles", "Punk", "Publishing", "Public Art", "Product Design", "Printing", "Print", "Pottery", "Pop", "Poetry", "Plays", "Playing Cards", "Places", "Photography", "Photobooks", "Photo", "Pet Fashion", "Periodicals", "Performances", "Performance Art", "People", "Painting", "Nonfiction", "Nature", "Narrative Film", "Musical", "Music Videos", "Music", "Movie Theaters", "Mobile Games", "Mixed Media", "Metal", "Makerspaces", "Live Games", "Literary Journals", "Letterpress", "Latin", "Knitting", "Kids", "Journalism", "Jewelry", "Jazz", "Interactive Design", "Installations", "Indie Rock", "Immersive", "Illustration", "Horror", "Hip-Hop", "Hardware", "Graphic Novels", "Graphic Design", "Glass", "Gaming Hardware", "Games", "Gadgets", "Footwear", "Food Trucks", "Food", "Flight", "Fine Art", "Film & Video", "Fiction", "Festivals", "Fashion", "Farms", "Farmer's Markets", "Fantasy", "Family", "Faith", "Fabrication Tools", "Experimental", "Events", "Embroidery", "Electronic Music", "Drinks", "Drama", "Documentary", "DIY Electronics", "DIY", "Digital Art", "Design", "Dance", "Crochet", "Crafts", "Couture", "Country & Folk", "Cookbooks", "Conceptual Art", "Community Gardens", "Comics", "Comic Books", "Comedy", "Classical Music", "Civic Design", "Chiptune", "Childrenswear", "Children's Books", "Ceramics", "Candles", "Camera Equipment", "Calendars", "Blues", "Bacon", "Audio", "Art Books", "Art", "Architecture", "Apps", "Apparel", "Anthologies", "Animation", "Animals", "Action", "Accessories", "Academic", "3D Printing"))
+#colSums(is.na(KickStar))
+KickStar<- KickStar[!is.na(KickStar$category),]
+#colSums(is.na(KickStar))
+#cleaning main_category column
+#table(KickStar$main_category)
+KickStar$main_category <- factor(KickStar$main_category, levels = c("Theater", "Technology", "Publishing", "Photography", "Music", "Journalism", "Games", "Food", "Film & Video", "Fashion", "Design", "Dance", "Crafts", "Comics", "Art"))
+#colSums(is.na(KickStar))
+#clearning currency column
+#table(KickStar$currency)
+KickStar$currency <- factor(KickStar$currency, levels = c("USD", "SGD", "SEK", "NZD", "NOK", "MXN", "HKD", "GBP", "EUR", "DKK", "CHF", "CAD", "AUD"))
+#colSums(is.na(KickStar))
+#cleaning goal column
+KickStar$goal <- as.numeric(KickStar$goal)
+#colSums(is.na(KickStar))
+#cleaning pledge column
+KickStar$pledged <- as.numeric(KickStar$pledged)
+#cleaning state column
+#table(KickStar$state)
+KickStar$state <- factor(KickStar$state, levels = c("failed", "successful"))
+#colSums(is.na(KickStar))
+KickStar<- KickStar[!is.na(KickStar$state),]
+#colSums(is.na(KickStar))
+#cleaning backers column
+KickStar$backers <- as.numeric(KickStar$backers)
+#colSums(is.na(KickStar))
+#cleaning country column
+#table(KickStar$country)
+KickStar$country <- factor(KickStar$country, levels = c("US", "SG", "SE", "NZ", "NO", "NL", "MX", "LU", "IT", "IE", "HK", "GB", "FR", "ES", "DK", "DE", "CH", "CA", "BE", "AU", "AT"))
+#colSums(is.na(KickStar))
+KickStar<- KickStar[!is.na(KickStar$country),]
+#colSums(is.na(KickStar))
+#cleaning usd.pledged column
+KickStar$usd.pledged <- as.numeric(KickStar$usd.pledged)
+#colSums(is.na(KickStar))
+#creates deadline and launched variable so its just year/month/day
+KickStar$newDeadline <- as.Date(as.POSIXlt(KickStar$deadline, origin = "1582-10-14",tz = "GMT"))
+KickStar$newLaunched <- as.Date(as.POSIXlt(KickStar$launched, origin = "1582-10-14",tz = "GMT"))
+#difference between launched and deadline in days
+#launch kickstarter before meeting the deadline for funds
+KickStar$DateDiffDays <- KickStar$newDeadline - KickStar$newLaunched
+#if successful, then 1, else 0
+KickStar$binomState <- ifelse(KickStar$state == "successful",1,0)
+#Added statistically significant frequency categories
+KickStar$SSFCategories <- ifelse(KickStar$main_category == "Film & Video" 
+                                 | KickStar$main_category == "Publishing" 
+                                 | KickStar$main_category == "Games"
+                                 | KickStar$main_category == "Design"
+                                 | KickStar$main_category == "Fashion"
+                                 ,1,0)
+#added statistically significant currencies
+KickStar$SScurrency <- ifelse(KickStar$currency == "NOK" 
+                                 | KickStar$currency == "GBP" 
+                                 | KickStar$currency == "EUR"
+                                 | KickStar$currency == "CHF"
+                                 | KickStar$currency == "CAD"
+                                 | KickStar$currency == "AUD"
+                                 ,1,0)
+#added average pledged
+KickStar$AveragePledged <- KickStar$pledged / KickStar$backers
+```
+
+#Establish Training and Test Set
+```{r}
+trainSize <- 0.75
+trainInd <- sample(1:nrow(KickStar), size = floor(nrow(KickStar) * trainSize))
+KickTrain <- KickStar[trainInd, ]
+KickTest <- KickStar[-trainInd, ]
+#gets summary of data
+summary(KickStar)
+```
+
+
+
+#Relevant ggplots
+```{r}
+#ggplot of Goal Amount and Pledge Amount by state of company
+ggplot(data = KickStar, aes(goal, pledged)) + geom_smooth() + facet_wrap(~state) + labs(title = "Smooth Plot of Goal vs Pledge Amount by State of Company") + labs(x = "Goal Amount", y = "Pledge Amount") 
+#ggplot of Goal Amount and Pledge Aamount by country
+ggplot(data = KickStar, aes(goal, pledged)) + geom_smooth() + facet_wrap(~country) + labs(title = "Smooth Plot of Goal vs Pledge Amount by Country") + labs(x = "Goal Amount", y = "Pledge Amount")
+#ggplot of bar graph with type of currency and the amount pledged 
+ggplot(data = KickStar, aes(x = currency, y = usd.pledged)) + geom_bar(stat = "identity") + labs(x = "Type of Currency", y = "Amount of $ Pledged") + labs(title = "Amount Pledged by Currency")
+
+
+###Graphs to use for powerpoint
+##ggplot of bar graph of count of each categories
+ggplot(data = KickStar, aes(main_category, fill = state)) + geom_bar(position = "dodge") + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + labs(title = "Count of Categories by Main Categories", x = "Main Categories", y = "Total Count") + coord_flip()
+
+##ggplot of bar
+ggplot(data = KickStar, aes(x = state, y = pledged, fill = state)) + geom_boxplot() + facet_wrap(~currency) +  labs(title = "Boxplots with Amount Pledges by Currency", x = "State", y = "Total Amount Pledged") + coord_flip() + stat_summary(fun.y=mean, geom="point", shape=19, size=2)
+```
+
+
+#Logistic Regression Models
+
+##Using the training data to create a model
+
+###Find summary statistics when the Kickstarter succeed (1) or did not (0)
+```{r}
+summaryBy(goal + pledged + backers + currency + DateDiffDays + SScurrency + SSFCategories + AveragePledged ~ binomState, data = KickTrain, fun = c(mean,sd))
+
+summaryBy(cbind(pledged, backers, DateDiffDays) ~ cbind(binomState,main_category), data = KickTrain)
+```
+
+
+###Creating a glm model on the training data and summary
+```{r}
+glmmodTrain <- glm(binomState ~ goal + pledged + backers + DateDiffDays + SScurrency + SSFCategories + AveragePledged, 
+                   data = KickTrain, family = binomial)
+summary(glmmodTrain)
+```
+
+
+###Find odds ratios
+```{r}
+exp(glmmodTrain$coefficients)
+```
+
+
+###Creating probabilty of failure (1) or not (0)
+```{r}
+glmTrainProbs <- predict.glm(glmmodTrain, type = "response")
+hist(glmTrainProbs)
+```
+
+
+```{r}
+table(KickStar$binomState)
+glmTrainPreds <- rep("Failed", nrow(KickTrain))
+glmTrainPreds[glmTrainProbs > 0.5] <- "Succeed"
+conftabtrain <- table(glmTrainPreds, true = KickTrain$binomState)
+print(conftabtrain)
+```
+
+
+##Using the TESTING data to create a model
+
+
+###Find summary statistics when the Kickstarter failed (1) or did not fail (0)
+```{r}
+summaryBy(goal + pledged + backers + DateDiffDays + SScurrency + SSFCategories + AveragePledged ~ binomState, data = KickTest, fun = c(mean,sd))
+```
+It appears that Kickstarters that had less funding, less pledges, less currency, and less backers failed.
+
+
+###Creating a glm model on the training data and summary
+```{r}
+glmmodTest <- glm(binomState ~ goal + pledged + backers + DateDiffDays + SScurrency + SSFCategories + AveragePledged, data = KickTest, family = binomial)
+summary(glmmodTest)
+```
+
+###Find odds ratios
+```{r}
+exp(glmmodTest$coefficients)
+```
+
+
+###Creating probabilty of failure (1) or not (0)
+```{r}
+glmTestProbs <- predict.glm(glmmodTest, type = "response")
+hist(glmTestProbs)
+```
+
+```{r}
+glmTestPreds <- rep("Failed", nrow(KickTest))
+glmTestPreds[glmTestProbs > 0.5] <- "Succeed"
+conftabtest <- table(glmTestPreds, true = KickTest$binomState)
+print(conftabtest)
+```
+
+##Validating Results
+```{r}
+
+TPtrain <- conftabtrain[2, 2]/(conftabtrain[1, 2] + conftabtrain[2, 2])
+TNtrain <- conftabtrain[1, 1]/(conftabtrain[1, 1] + conftabtrain[2, 1])
+FPtrain <- conftabtrain[2, 1]/(conftabtrain[2, 1] + conftabtrain[1, 1])
+FNtrain <- conftabtrain[1, 2]/(conftabtrain[1, 1] + conftabtrain[2, 1])
+
+TPtest <- conftabtest[2, 2]/(conftabtest[1, 2] + conftabtest[2, 2])
+TNtest <- conftabtest[1, 1]/(conftabtest[1, 1] + conftabtest[2, 1])
+FPtest <- conftabtest[2, 1]/(conftabtest[2, 1] + conftabtest[1, 1])
+FNtest <- conftabtest[1, 2]/(conftabtest[1, 1] + conftabtest[2, 1])
+#TRAINING RESULTS
+print("Training True Positives")
+print(TPtrain)
+print("Training True Negatives")
+print(TNtrain)
+print("Training False Positives")
+print(FPtrain)
+print("Training False Negatives")
+print(FNtrain)
+print("--------")
+#TESTING RESULTS
+print("Testing True Positives")
+print(TPtest)
+print("Testing True Negatives")
+print(TNtest)
+print("Testing False Positives")
+print(FPtest)
+print("Testing False Negatives")
+print(FNtest)
+```
+
+###ROC Curve
+```{r}
+scoresTest <- predict(glmmodTest, newdata = KickTest, type = "response")
+scoresTrain <- predict(glmmodTrain, newdata = KickTrain, type = "response")
+scoresDF <- data.frame(scores = c(scoresTest, scoresTrain), type = c(rep("Test",
+times = length(scoresTest)), rep("Train", times = length(scoresTrain))),
+true = c(KickTest$binomState, KickTrain$binomState))
+
+```
+
+###Testing and Training Scores
+```{r}
+scoresDF$ActualValue <- ifelse(scoresDF$true == 1, "Yes", "No")
+ggplot(data = scoresDF, aes(x = scores, fill = ActualValue)) + geom_histogram(alpha = .7) + facet_grid(type ~ .) + facet_wrap(~type, scales = "free")
+```
+
+
+```{r}
+doBy::summaryBy(scores ~ type, data = scoresDF)
+```
+
+```{r}
+ggplot(scoresDF, aes(m = scores, d = true, color = type)) + geom_roc(show.legend = TRUE, 
+labelsize = 3.5, cutoffs.at = c(0.99, 0.9, 0.7, 0.5, 0.3, 0.1, 0))
+```
+
+
+
+#Lasso, Ridge, Elastic Net Models
+
+```{r}
+myFormula <- as.formula(binomState ~ goal + pledged + backers + country + usd.pledged + DateDiffDays + SScurrency + SSFCategories + AveragePledged)
+Xvar <- build.x(myFormula, KickTrain) 
+Yvar <- build.y(myFormula, KickTrain)
+XvarTest <- build.x(myFormula, KickTest)
+YvarTest <- build.y(myFormula, KickTest)
+LassoMod <- cv.glmnet(x = Xvar, y = Yvar, alpha = 1, nfolds = 10, family = "binomial")
+LassoModTest <- cv.glmnet(x = XvarTest, y = YvarTest)
+
+plot(LassoMod)
+plot(LassoModTest)
+LassoMod
+LassoModTest
+#Ridge Mod.
+RidgeMod <- cv.glmnet(x = Xvar, y = Yvar, alpha = 0, nfolds = 10, family = "binomial")
+plot(RidgeMod)
+#Elastic Net
+ElasticNet1 <- cv.glmnet(x = Xvar, y = Yvar, alpha = .25, nfolds = 10, family = "binomial")
+ElasticNet2 <- cv.glmnet(x = Xvar, y = Yvar, alpha = .50, nfolds = 10, family = "binomial")
+ElasticNet3 <- cv.glmnet(x = Xvar, y = Yvar, alpha = .75, nfolds = 10, family = "binomial")
+plot(ElasticNet1)
+#MSE
+MSE <- function(true, preds) { mean((true - preds)^2) }
+MSE(KickTrain$binomState, predict(LassoMod, newx = Xvar))
+MSE(KickTrain$binomState, predict(RidgeMod, newx = Xvar))
+MSE(KickTrain$binomState, predict(ElasticNet1, newx = Xvar))
+MSE(KickTrain$binomState, predict(ElasticNet2, newx = Xvar))
+MSE(KickTrain$binomState, predict(ElasticNet3, newx = Xvar))
+
+
+#MSE TEST
+MSE(KickTest$binomState, predict(LassoModTest, newx = XvarTest))
+```
+
+###Tree Based Methods
+```{r}
+newKickStar <- subset(KickStar, select = -c(1,2,3,4,5,6,8,12,14,15))
+#View(newKickStar)
+trainSize <- .05
+trainInd <- sample(1:nrow(newKickStar), size = floor(nrow(newKickStar) * trainSize))
+newKickTrain <- newKickStar[trainInd, ]
+newKickTest <- newKickStar[-trainInd, ]
+```
+
+
+```{r}
+#README!!! make sure you click the green arrow to run this properly
+#method = class for classification problem
+tree <- rpart(state ~ .-binomState, data = newKickTrain, method = "class", control = rpart.control(minsplit=30,  cp=0.01))
+par(xpd=TRUE)
+plot(tree); text(tree, pretty = 0)
+```
+
+
+
+###Random Forest
+
+WEBSITE USED: https://www.statmethods.net/advstats/cart.html
+
+```{r}
+randTree <- randomForest(state ~ ., data=newKickTrain, mtry=3, method = "class")
+#importance(randTree)
+#plot(randTree)
+
+randForPredictTrain <- predict(randTree, newdata = newKickTrain, mtry = 3)
+#randForTrainMSE = mean((newKickTrain$state - randForPredictTrain)^2)
+#randForPredictTest <- predict(randFor, newdata = newKickTest, mtry = 3)
+#randForTestMSE = mean((AutoTest$mpg - randForPredictTest)^2)
+#print(randForTrainMSE)
+#print(randForTestMSE)
+```
+##USE THIS ONE
+##Pruning Tree
+```{r}
+# HAVENT TOUCHED THIS YET 
+# predict using the test data
+tree.pred <- predict(tree, newKickTrain,type="class")
+# note with() command evaluates an R expression in an environment 
+# constructed from the data, 
+with(newKickTrain,table(tree.pred,state))
+#install.packages('tree')
+require('ISLR')
+require('tree')
+# now do some cross-validating
+printcp(tree)
+pruned.tree <- prune(tree, cp = 0.028)
+par(xpd=TRUE)
+plot(pruned.tree); text(pruned.tree, pretty = 0)
+```
+
+
+
+##USE THIS ONE.
+###WORK ON THIS LATER
+```{r}
+MSE <- function(truth, predict) {mean((truth - predict)^2)}
+predsTrain <- predict(tree, newdata = newKickTrain)
+predsValidate <- predict(tree, newdata = newKickTest)
+MSE(newKickTrain$binomState, predsTrain)
+MSE(newKickTest$binomState, predsValidate)
+```
+
+
+
+
+
+

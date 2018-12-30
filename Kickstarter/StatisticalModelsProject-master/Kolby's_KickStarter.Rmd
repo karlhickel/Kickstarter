@@ -1,0 +1,36 @@
+
+##Columns Explaination
+1) ID = internal kickstarter id
+2) name = name of project - A project is a finite work with a clear goal that you’d like to bring to life. Think albums, books, or films.
+3) category = category
+4) main_category = category of campaign
+5) currency = currency used to support
+6) deadline = deadline for crowdfunding
+7) goal = fundraising goal - The funding goal is the amount of money that a creator needs to complete their project.
+8) launched = launched date launched
+9) pledged = amount pledged by "crowd"
+10) state = Current condition the project is in
+11) backers = number of backers
+12) country = country pledged from
+13) usd pledged = amount of money pledged
+
+```{r}
+KickStar <- read.csv("/Users/karlhickel/Desktop/ks-projects-201612.csv")
+KickStar$goal <- as.numeric(KickStar$goal)
+KickStar$pledged <- as.numeric(KickStar$pledged)
+KickStar$state <- factor(KickStar$state, levels = c("failed", "successful", "canceled", "live", "undefined", "suspended"))
+
+summary(KickStar)
+
+#install.packages("ggplot2")
+library(ggplot2)
+
+#ggplot of Goal Amount and Pledge Amount
+ggplot(data = KickStar, aes(goal, pledged)) + geom_smooth() + facet_wrap(~state) + labs(title = "Smooth Plot of Goal vs Pledge Amount") + labs(x = "Goal Amount", y = "Pledge Amount")
+
+ggplot(data = KickStar, aes(x = currency, y = usd.pledged) + )
+View(KickStar)
+
+
+geom_violin(aes(group = cut_width(year, 10)), scale = "width")
+```

@@ -1,0 +1,8 @@
+---
+title: "Arbitrary Title Name"
+author: "Eric Vela, Karl Hickel, Kolby Ramirez"
+date: "October 17, 2018"
+output: pdf_document
+---
+
+Hi
